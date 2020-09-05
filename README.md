@@ -2,6 +2,8 @@
 
 This package provides bond pricing functions as well as basic NPV/IRR functions. Bond valuation can be done using an yield to maturity or using a zero yield curve. There is a convenience function to construct a zero yield curve from a few points on the par bond or zero yield curve or from Nelson Siegel parameters.
 
+The documentation is available at <https://bond-pricing.readthedocs.io/>
+
 The bond valuation functions can be used in two modes:
 
 * The first mode is similar to spreadsheet bond pricing functions. The settlement date and maturity date are given as dates and the software calculates the time to maturity and to each coupon payment date from these dates. For any `daycount` other than simple counting of days (ACT/365 in ISDA terminology), this packages relies on the `isda_daycounters` module that can be downloaded from <https://github.com/miradulo/isda_daycounters>
