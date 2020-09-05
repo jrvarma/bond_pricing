@@ -16,6 +16,7 @@ setup(name='bond_pricing',
       install_requires=[
           'numpy',
           'scipy',
+          'pandas',
       ],
       extras_require={
       },
