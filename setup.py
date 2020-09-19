@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='bond_pricing',
-      version='0.5.1',
+      version='0.5.2',
       maintainer='Jayanth R. Varma',
       maintainer_email='jrvarma@gmail.com',
       description='Bond Price with YTM/zero-curve & NPV, IRR, annuities',
