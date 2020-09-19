@@ -16,9 +16,10 @@ Maturity can alternatively be given in years by setting `settle`
 to `None`. The trade/settlement date is then year 0.
 
 """
-from numpy import array, where, vectorize, floor, float64
+from numpy import array, where, vectorize, float64, ceil
 import pandas as pd
-from bond_pricing.utils import newton_wrapper, edate
+from bond_pricing.utils import (
+    newton_wrapper, edate, dict_to_dataframe)
 from bond_pricing.present_value import pvaf, equiv_rate
 
 
@@ -31,7 +32,7 @@ def _bond_coupon_periods_0(settle=None, mat=1, freq=2, daycount=None):
     if settle is not None:
         settle = pd.to_datetime(settle)
         mature = pd.to_datetime(mat)
-        # approximate number of coupons left
+        # approximate number of full coupon periods left
         n = int(freq * (mature - settle).days / 360)
         # the divisor of 360 guarantees this is an overestimate
         # we keep reducing n till it is right
@@ -39,6 +40,10 @@ def _bond_coupon_periods_0(settle=None, mat=1, freq=2, daycount=None):
             n -= 1
         next_coupon = edate(mature, -n * 12 / freq)
         prev_coupon = edate(next_coupon, -12/freq)
+        if prev_coupon != settle:
+            # we are in the middle of a coupon period
+            # no of coupons is One PLUS No of full coupon periods
+            n += 1
         if daycount is None:
             daycounter = default_daycounter
         else:
@@ -53,11 +58,18 @@ def _bond_coupon_periods_0(settle=None, mat=1, freq=2, daycount=None):
         accrual_fraction = daycounter.year_fraction(
             prev_coupon, settle) * freq
     else:
-        n = floor(mat*freq)
-        discounting_fraction = freq * mat - n
-        accrual_fraction = 1 - discounting_fraction
+        n = ceil(mat*freq)
+        accrual_fraction = n - freq * mat
+        discounting_fraction = 1 - accrual_fraction
         next_coupon = None
         prev_coupon = None
+    if accrual_fraction == 1:
+        # We are on coupon date. Assume that bond is ex-interest
+        # Remove today's coupon
+        # This affects dirty price and accrued interest
+        # but not clean price
+        discounting_fraction += 1
+        accrual_fraction -= 1
     return (n, discounting_fraction, accrual_fraction,
             next_coupon, prev_coupon)
 
@@ -65,7 +77,8 @@ def _bond_coupon_periods_0(settle=None, mat=1, freq=2, daycount=None):
 _bond_coupon_periods = vectorize(_bond_coupon_periods_0)
 
 
-def bond_coupon_periods(settle=None, mat=1, freq=2, daycount=None):
+def bond_coupon_periods(settle=None, mat=1, freq=2, daycount=None,
+                        return_dataframe=False):
     r""" Compute no of coupon, coupon dates and fractions
 
     Parameters
@@ -78,6 +91,9 @@ def bond_coupon_periods(settle=None, mat=1, freq=2, daycount=None):
           Coupon frequency
     daycount : daycounter
           This class has day_count and year_fraction methods
+    return_dataframe : bool
+         whether to return pandas DataFrame instead of dict
+
     Returns
     -------
     dict
@@ -96,7 +112,7 @@ def bond_coupon_periods(settle=None, mat=1, freq=2, daycount=None):
     >>> bond_coupon_periods(
     ... settle='2020-03-13', mat='2030-01-01', freq=2, daycount=None
     ... )  # doctest: +NORMALIZE_WHITESPACE
-    {'n': 19,
+    {'n': 20,
     'discounting_fraction': 0.6,
     'accrual_fraction': 0.4,
     'next_coupon': Timestamp('2020-07-01 00:00:00'),
@@ -105,7 +121,7 @@ def bond_coupon_periods(settle=None, mat=1, freq=2, daycount=None):
     >>> bond_coupon_periods(
     ... mat=10.125, freq=2, daycount=None
     ... )  # doctest: +NORMALIZE_WHITESPACE
-    {'n': 20.0,
+    {'n': 21.0,
     'discounting_fraction': 0.25,
     'accrual_fraction': 0.75,
     'next_coupon': None,
@@ -115,22 +131,26 @@ def bond_coupon_periods(settle=None, mat=1, freq=2, daycount=None):
     res = array(_bond_coupon_periods(settle=settle, mat=mat,
                                      freq=freq, daycount=daycount))
     if len(res.shape) > 1:
-        return dict(n=res[0, :],
-                    discounting_fraction=res[1, :],
-                    accrual_fraction=res[2, :],
-                    next_coupon=res[3, :],
-                    prev_coupon=res[4, :],)
+        result = dict(n=res[0, :],
+                      discounting_fraction=res[1, :],
+                      accrual_fraction=res[2, :],
+                      next_coupon=res[3, :],
+                      prev_coupon=res[4, :],)
     else:
-        return dict(n=res[0][()],
-                    discounting_fraction=res[1][()],
-                    accrual_fraction=res[2][()],
-                    next_coupon=res[3][()],
-                    prev_coupon=res[4][()],)
+        result = dict(n=res[0][()],
+                      discounting_fraction=res[1][()],
+                      accrual_fraction=res[2][()],
+                      next_coupon=res[3][()],
+                      prev_coupon=res[4][()],)
+    if return_dataframe:
+        return dict_to_dataframe(result)
+    else:
+        return result
 
 
-def bond_price_breakup(settle=None, cpn=0, mat=1,
-                       yld=0, freq=2, comp_freq=None,
-                       face=100, redeem=None, daycount=None):
+def bond_price_breakup(settle=None, cpn=0, mat=1, yld=0, freq=2,
+                       comp_freq=None, face=100, redeem=None,
+                       daycount=None, return_dataframe=False):
     r"""Compute clean/dirty price & accrued_interest of coupon bond using YTM
 
     Parameters
@@ -153,6 +173,8 @@ def bond_price_breakup(settle=None, cpn=0, mat=1,
           Redemption value
     daycount : daycounter
           This class has day_count and year_fraction methods
+    return_dataframe : bool
+         whether to return pandas DataFrame instead of dict
 
     Returns
     -------
@@ -172,9 +194,9 @@ def bond_price_breakup(settle=None, cpn=0, mat=1,
     >>> bond_price_breakup(
     ... settle="2012-04-15", mat="2022-01-01", cpn=8e-2, yld=8.8843e-2,
     ... freq=1)  # doctest: +NORMALIZE_WHITESPACE
-    {'DirtyPrice': 96.64322827099211,
+    {'DirtyPrice': 96.64322827099208,
     'AccruedInterest': 2.311111111111111,
-    'CleanPrice': 94.33211715988101,
+    'CleanPrice': 94.33211715988098,
     'NextCoupon': Timestamp('2013-01-01 00:00:00'),
     'PreviousCoupon': Timestamp('2012-01-01 00:00:00')}
 
@@ -190,12 +212,12 @@ def bond_price_breakup(settle=None, cpn=0, mat=1,
     >>> bond_price_breakup(
     ... settle="2012-04-15", mat="2022-01-01", cpn=8e-2, yld=8.8843e-2,
     ... freq=[1,2,4])  # doctest: +NORMALIZE_WHITESPACE
-    {'DirtyPrice': array([96.64322827099211, 96.6156060149078,
-     94.5948882864679], dtype=object),
+    {'DirtyPrice': array([96.64322827099208, 96.61560601490777,
+     94.59488828646788], dtype=object),
     'AccruedInterest': array([2.311111111111111, 2.311111111111111,
     0.3111111111111111], dtype=object),
-    'CleanPrice': array([94.33211715988101, 94.3044949037967,
-    94.2837771753568], dtype=object),
+    'CleanPrice': array([94.33211715988098, 94.30449490379667,
+    94.28377717535678], dtype=object),
     'NextCoupon': array([Timestamp('2013-01-01 00:00:00'),
                         Timestamp('2012-07-01 00:00:00'),
                         Timestamp('2012-07-01 00:00:00')],
@@ -204,6 +226,14 @@ def bond_price_breakup(settle=None, cpn=0, mat=1,
                             Timestamp('2012-01-01 00:00:00'),
                             Timestamp('2012-04-01 00:00:00')],
                             dtype=object)}
+    >>> bond_price_breakup(
+    ... settle="2012-04-15", mat="2022-01-01", cpn=8e-2, yld=8.8843e-2,
+    ... freq=[1,2,4],
+    ... return_dataframe=True)
+      DirtyPrice AccruedInterest CleanPrice NextCoupon PreviousCoupon
+    0    96.6432         2.31111    94.3321 2013-01-01     2012-01-01
+    1    96.6156         2.31111    94.3045 2012-07-01     2012-01-01
+    2    94.5949        0.311111    94.2838 2012-07-01     2012-04-01
 
     """
     # None can make comp_freq an array of objects
@@ -215,9 +245,13 @@ def bond_price_breakup(settle=None, cpn=0, mat=1,
     redeem = where(redeem is None, face, redeem)
     red_by_face = redeem / face
     res = bond_coupon_periods(settle, mat, freq, daycount)
-    fractional_DF = (1 + yld/freq)**-res['discounting_fraction']
-    dirty = fractional_DF * (
-        cpn/freq + cpn/freq * pvaf(yld/freq, res['n'])
+    # compounding factor from previous coupon date to settlement date
+    fractional_CF = (1 + yld/freq)**res['accrual_fraction']
+    # calculate PV as at previous coupon date and compound to today
+    dirty = fractional_CF * (
+        # PV of coupons as at previous coupon date
+        cpn/freq * pvaf(yld/freq, res['n'])
+        # PV of redemption as at previous coupon date
         + red_by_face * (1 + yld/freq)**-res['n'])
     accrued = cpn/freq * res['accrual_fraction']
     clean = dirty - accrued
@@ -226,7 +260,10 @@ def bond_price_breakup(settle=None, cpn=0, mat=1,
                   CleanPrice=(face*clean)[()],
                   NextCoupon=res['next_coupon'],
                   PreviousCoupon=res['prev_coupon'])
-    return result
+    if return_dataframe:
+        return dict_to_dataframe(result)
+    else:
+        return result
 
 
 def bond_price(settle=None, cpn=0, mat=1,
@@ -267,14 +304,14 @@ def bond_price(settle=None, cpn=0, mat=1,
     --------
     >>> bond_price(settle="2012-04-15", mat="2022-01-01", cpn=8e-2,
     ... yld=8.8843e-2, freq=1)
-    94.33211715988101
+    94.33211715988098
 
     >>> bond_price(mat=10.25, cpn=8e-2, yld=9e-2, freq=2)
     93.37373582338677
 
     >>> bond_price(settle="2012-04-15", mat="2022-01-01", cpn=8e-2,
     ...            yld=8.8843e-2,freq=[1, 2, 4])
-    array([94.33211715988101, 94.3044949037967, 94.2837771753568],
+    array([94.33211715988098, 94.30449490379667, 94.28377717535678],
           dtype=object)
 
     """
@@ -359,7 +396,7 @@ def bond_duration(settle=None, cpn=0, mat=1, yld=0, freq=2,
     y = yld/freq
     c = cpn/freq
     T = res['n']
-    T += where(res['accrual_fraction'] > 0, 1, 0)
+    # T += where(res['accrual_fraction'] > 0, 1, 0)
     F = (1+y)**T
     dur = (1+y)/y - (1+y + T*(c/R-y)) / (c*(F-1)/R + y)
     # now we subtract the fractional coupon period
@@ -420,10 +457,10 @@ def bond_yield(settle=None, cpn=0, mat=1, price=100, freq=2, comp_freq=None,
 
     >>> bond_yield(settle="2012-04-15", mat="2022-01-01", cpn=8e-2,
     ... price=94.33, freq=1)
-    0.08884647275135969
+    0.08884647275135965
 
     >>> bond_yield(mat=10.25, cpn=8e-2, price=93.37, freq=2)
-    0.0900059160410503
+    0.09000591604105035
 
     >>> bond_yield(settle="2012-04-15", mat="2022-01-01", cpn=8e-2,
     ... price=[93, 94, 95], freq=1)

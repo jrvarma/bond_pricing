@@ -4,6 +4,8 @@
 
 `edate` moves date(s) by specified no of months (similar to excel edate)
 
+`dataframe_like_dict` creates pandas DataFrame from dict like arguments
+
 """
 from scipy.optimize import newton
 import pandas as pd
@@ -88,3 +90,15 @@ def edate(dt, m):
           dtype=object)
     """
     return _edate(dt, np.array(m))[()]
+
+
+def dict_to_dataframe(d):
+    lengths = [1]
+    lengths += [len(x) for x in d.values()
+                if hasattr(x, "len")
+                and not isinstance(x, str)]
+    lengths += [x.shape[0] for x in d.values()
+                if hasattr(x, "shape")
+                and len(x.shape) > 0]
+    n = max(lengths)
+    return pd.DataFrame(d, index=range(n))

@@ -10,7 +10,7 @@ can be used directly if desired.
 """
 import numpy as np
 from numpy import array, log, exp, where, vectorize
-from bond_pricing.utils import newton_wrapper
+from bond_pricing.utils import newton_wrapper, dict_to_dataframe
 
 
 def pvaf(r, n):
@@ -598,7 +598,8 @@ def annuity_rate(n_periods=np.inf, instalment=1, pv=None, fv=None,
 def annuity_instalment_breakup(
         rate, n_periods=np.inf, pv=None, fv=None,
         terminal_payment=0, immediate_start=False,
-        cf_freq=1, comp_freq=1, period_no=1):
+        cf_freq=1, comp_freq=1, period_no=1,
+        return_dataframe=False):
     r"""Break up instalment into principal and interest parts
 
     Parameters
@@ -621,6 +622,8 @@ def annuity_instalment_breakup(
          cash flow frequency (for example, 2 for semi-annual)
     comp_freq : float or sequence of floats
          compounding frequency (for example, 2 for semi-annual)
+    return_dataframe : bool
+         whether to return pandas DataFrame instead of dict
 
     Returns
     -------
@@ -646,20 +649,17 @@ def annuity_instalment_breakup(
      'Principal Part': 192.7716572270919,
      'Closing Principal': 2879.512095039507}
 
-    >>> annuity_instalment_breakup(rate=10e-2, n_periods=15, pv=3803.04,
-    ...       period_no=range(1, 4))  # doctest: +NORMALIZE_WHITESPACE
-    {'Period No':
-     array([1, 2, 3]),
-     'Opening Principal':
-     array([3803.04      , 3683.34396755, 3551.67833185]),
-     'Instalment':
-     500.0000324537518,
-     'Interest Part':
-     array([380.304     , 368.33439675, 355.16783318]),
-     'Principal Part':
-     array([119.69603245, 131.6656357 , 144.83219927]),
-     'Closing Principal':
-      array([3683.34396755, 3551.67833185, 3406.84613258])}
+    >>> d = annuity_instalment_breakup(rate=10e-2, n_periods=15, pv=3803.04,
+    ...       period_no=range(1, 4), return_dataframe=True
+    ...       ); print(d.iloc[:, :4]); print(d.iloc[:, 4:])
+       Period No  Opening Principal  Instalment  Interest Part
+    0          1        3803.040000  500.000032     380.304000
+    1          2        3683.343968  500.000032     368.334397
+    2          3        3551.678332  500.000032     355.167833
+       Principal Part  Closing Principal
+    0      119.696032        3683.343968
+    1      131.665636        3551.678332
+    2      144.832199        3406.846133
 
     """
     fv, pv, n_periods = array(fv), array(pv), array(n_periods)
@@ -680,10 +680,14 @@ def annuity_instalment_breakup(
         rate=rate, n_periods=period_no-1, instalment=instalment,
         immediate_start=immediate_start,
         cf_freq=cf_freq, comp_freq=comp_freq)
-    return {"Period No": period_no[()],
-            "Opening Principal": opening_principal,
-            "Instalment": instalment,
-            "Interest Part": opening_principal * r,
-            "Principal Part": instalment - opening_principal * r,
-            "Closing Principal":
-            opening_principal + opening_principal * r - instalment}
+    result = {"Period No": period_no[()],
+              "Opening Principal": opening_principal,
+              "Instalment": instalment,
+              "Interest Part": opening_principal * r,
+              "Principal Part": instalment - opening_principal * r,
+              "Closing Principal":
+              opening_principal + opening_principal * r - instalment}
+    if return_dataframe:
+        return dict_to_dataframe(result)
+    else:
+        return result

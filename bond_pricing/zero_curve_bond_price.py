@@ -3,10 +3,11 @@ from numpy import (array, arange, empty_like, vectorize,  # noqa E401
                    concatenate)
 import numpy as np
 from scipy.interpolate import CubicSpline
-from bond_pricing.simple_bonds import bond_coupon_periods
+from bond_pricing.simple_bonds import bond_coupon_periods, equiv_rate
+from bond_pricing.utils import newton_wrapper, dict_to_dataframe
 
 
-def par_yld_to_zero(par, freq=1):
+def par_yld_to_zero(par, freq=1, return_dataframe=False):
     r"""Bootstrap a complete par bond yield curve to zero
 
     Parameters
@@ -16,9 +17,11 @@ def par_yld_to_zero(par, freq=1):
           Maturities are spaced 1/freq years apart
     freq : int
           The coupon frequency (equals compounding frequency)
+    return_dataframe : bool
+         whether to return pandas DataFrame instead of dict
     Returns
     -------
-    dict:
+    dict or DataFrame:
 
           zero_yields: array of zero yields in decimal
 
@@ -33,16 +36,18 @@ def par_yld_to_zero(par, freq=1):
     >>> par_yld_to_zero(
     ... par=[1.0200e-2, 1.2000e-2, 1.4200e-2, 1.6400e-2, 1.9150e-2,
     ...      2.1900e-2, 2.4375e-2, 2.6850e-2, 2.9325e-2, 3.1800e-2],
-    ... freq=2)  # doctest: +NORMALIZE_WHITESPACE
-    {'zero_yields':
-     array([0.0102    , 0.0120054 , 0.01421996, 0.01644462, 0.01924529,
-             0.02206823, 0.02462961, 0.02721789, 0.0298373 , 0.0324924 ]),
-     'zero_prices':
-     array([0.99492588, 0.98810183, 0.97896982, 0.96777586, 0.9532451 ,
-            0.9362787 , 0.91789052, 0.89750426, 0.87522337, 0.85115892]),
-     'forward_rates':
-     array([0.0102    , 0.01381243, 0.01865638, 0.02313337, 0.03048693,
-            0.0362422 , 0.04006615, 0.04542879, 0.05091476, 0.05654513])}
+    ... freq=2, return_dataframe=True)
+       zero_yields  zero_prices  forward_rates
+    0     0.010200     0.994926       0.010200
+    1     0.012005     0.988102       0.013812
+    2     0.014220     0.978970       0.018656
+    3     0.016445     0.967776       0.023133
+    4     0.019245     0.953245       0.030487
+    5     0.022068     0.936279       0.036242
+    6     0.024630     0.917891       0.040066
+    7     0.027218     0.897504       0.045429
+    8     0.029837     0.875223       0.050915
+    9     0.032492     0.851159       0.056545
 
     """
     annuity = 0
@@ -60,7 +65,11 @@ def par_yld_to_zero(par, freq=1):
         fwd[i] = (prev_zero / zero_price - 1) * freq
         prev_zero = zero_price
         annuity += zero_price
-    return dict(zero_yields=zyld, zero_prices=zp, forward_rates=fwd)
+    result = dict(zero_yields=zyld, zero_prices=zp, forward_rates=fwd)
+    if return_dataframe:
+        return dict_to_dataframe(result)
+    else:
+        return result
 
 
 def zero_to_par(zero_prices=None, zero_yields=None, freq=1):
@@ -245,10 +254,10 @@ def make_zero_price_fun(flat_curve=None,
     return lambda x: exp(interp(x, t, log_zero_df, left=nan, right=nan))
 
 
-def zero_curve_bond_price_breakup(settle=None, cpn=0, mat=1,
-                                  zero_price_fn=(lambda x: 1),
-                                  freq=2, face=100, redeem=None,
-                                  daycount=None):
+def zero_curve_bond_price_breakup(
+        settle=None, cpn=0, mat=1, zero_price_fn=(lambda x: 1),
+        freq=2, face=100, redeem=None, daycount=None,
+        return_dataframe=False):
     r"""Clean/dirty price & accrued interest of coupon bond using zero yields
 
     Parameters
@@ -270,10 +279,12 @@ def zero_curve_bond_price_breakup(settle=None, cpn=0, mat=1,
           Redemption value
     daycount : daycounter
           This class has day_count and year_fraction methods
+    return_dataframe : bool
+         whether to return pandas DataFrame instead of dict
 
     Returns
     -------
-    dict
+    dict or DataFrame
          dirty: dirty price of the bond
 
          accrued: accrued interest
@@ -290,9 +301,9 @@ def zero_curve_bond_price_breakup(settle=None, cpn=0, mat=1,
     ...     cpn=10e-2, mat=10, freq=1,
     ...     zero_price_fn=make_zero_price_fun(
     ...         flat_curve=8e-2))  # doctest: +NORMALIZE_WHITESPACE
-    {'DirtyPrice': 123.42016279788284,
-     'AccruedInterest': 10.0,
-     'CleanPrice': 113.42016279788282,
+    {'DirtyPrice': 113.42016279788285,
+     'AccruedInterest': 0.0,
+     'CleanPrice': 113.42016279788285,
      'NextCoupon': None,
      'PreviousCoupon': None}
 
@@ -301,8 +312,8 @@ def zero_curve_bond_price_breakup(settle=None, cpn=0, mat=1,
     ...     zero_price_fn=make_zero_price_fun(
     ...         zero_at_coupon_dates=[3e-2, 10e-2])
     ... )  # doctest: +NORMALIZE_WHITESPACE
-    {'DirtyPrice': 96.63122843617107,
-     'AccruedInterest': 5.0,
+    {'DirtyPrice': 91.63122843617106,
+     'AccruedInterest': 0.0,
      'CleanPrice': 91.63122843617106,
      'NextCoupon': None,
      'PreviousCoupon': None}
@@ -312,12 +323,14 @@ def zero_curve_bond_price_breakup(settle=None, cpn=0, mat=1,
     redeem = where(redeem is None, face, redeem)
     red_by_face = redeem / face
     res = bond_coupon_periods(settle, mat, freq, daycount)
+    # print(res)
 
     def one_dirty_price(n, fraction, coupon, R_by_F, zp_fun):
-        t = arange(n+1) + fraction
+        t = arange(n) + fraction
         df = zp_fun(t)
-        cf = [coupon] * int(n) + [cpn + R_by_F]
-        # print(t, df, cf)
+        cf = [coupon] * int(n-1) + [cpn + R_by_F]
+        # import pandas as pd
+        # print(pd.DataFrame(dict(df=df, cf=cf), index=t))
         return dot(df, cf)
 
     dirty_price = vectorize(one_dirty_price)
@@ -333,7 +346,10 @@ def zero_curve_bond_price_breakup(settle=None, cpn=0, mat=1,
                   CleanPrice=(face*clean)[()],
                   NextCoupon=res['next_coupon'],
                   PreviousCoupon=res['prev_coupon'])
-    return result
+    if return_dataframe:
+        return dict_to_dataframe(result)
+    else:
+        return result
 
 
 def zero_curve_bond_price(settle=None, cpn=0, mat=1,
@@ -373,7 +389,7 @@ def zero_curve_bond_price(settle=None, cpn=0, mat=1,
     ...     cpn=10e-2, mat=10, freq=1,
     ...     zero_price_fn=make_zero_price_fun(
     ...         flat_curve=8e-2))  # doctest: +NORMALIZE_WHITESPACE
-    113.42016279788282
+    113.42016279788285
 
     >>> zero_curve_bond_price(
     ...     cpn=5e-2, mat=2, freq=1,
@@ -394,3 +410,139 @@ def zero_curve_bond_price(settle=None, cpn=0, mat=1,
         settle=settle, cpn=cpn, mat=mat, zero_price_fn=zero_price_fn,
         freq=freq, face=face, redeem=redeem,
         daycount=daycount)['CleanPrice']
+
+
+def zero_curve_bond_duration(settle=None, cpn=0, mat=1,
+                             zero_price_fn=(lambda x: 1),
+                             freq=2, face=100, redeem=None,
+                             daycount=None, modified=False):
+    r"""Duration of coupon bond using zero yields
+
+    Parameters
+    ----------
+    settle : date or None
+          The settlement date. None means maturity is in years.
+    cpn : float
+          The coupon rate in decimal
+    mat : float or date
+          Maturity date or if settle is None, maturity in years
+    zero_price_fn : function
+          takes float (maturity) as argument and
+          returns float (zero price)
+    freq : int
+          Coupon frequency
+    face : float
+          Face value of the bond
+    redeem : float
+          Redemption value
+    daycount : daycounter
+          This class has day_count and year_fraction methods
+
+    Returns
+    -------
+    float
+         duration or modified duration of the bond
+
+    Examples
+    --------
+    >>> zero_curve_bond_duration(
+    ...     cpn=10e-2, mat=10, freq=1,
+    ...     zero_price_fn=make_zero_price_fun(
+    ...         flat_curve=8e-2))  # doctest: +NORMALIZE_WHITESPACE
+    6.965803939497351
+    >>> zero_curve_bond_duration(
+    ...     cpn=5e-2, mat=2, freq=1,
+    ...     zero_price_fn=make_zero_price_fun(
+    ...         zero_at_coupon_dates=[3e-2, 10e-2])
+    ... )  # doctest: +NORMALIZE_WHITESPACE
+    1.9470227670753064
+    """
+    freq, cpn = array(freq), array(cpn)
+    redeem = where(redeem is None, face, redeem)
+    red_by_face = redeem / face
+    res = bond_coupon_periods(settle, mat, freq, daycount)
+
+    def one_duration(n, fraction, coupon, R_by_F, zp_fun):
+        t = arange(n) + fraction
+        df = zp_fun(t)
+        cf = [coupon] * int(n-1) + [cpn + R_by_F]
+        # import pandas as pd
+        # print(pd.DataFrame(dict(df=df, cf=cf), index=t))
+        return dot(df, cf * t) / dot(df, cf)
+
+    duration = vectorize(one_duration)
+    result = duration(n=res['n'],
+                      fraction=res['discounting_fraction'],
+                      coupon=cpn,
+                      R_by_F=red_by_face,
+                      zp_fun=zero_price_fn)
+    return result[()]
+
+
+def static_zero_spread(settle=None, cpn=0, mat=1, price=None,
+                       zero_price_fn=(lambda x: 1),
+                       freq=2, face=100, redeem=None,
+                       daycount=None, guess=0.0):
+    r"""Static spread (Z-spread) over zero curve to match bond price
+
+    Parameters
+    ----------
+    settle : date or None
+          The settlement date. None means maturity is in years.
+    cpn : float
+          The coupon rate in decimal
+    mat : float or date
+          Maturity date or if settle is None, maturity in years
+    price : float
+          Market price of the bond
+    zero_price_fn : function
+          takes float (maturity) as argument and
+          returns float (zero price)
+    freq : int
+          Coupon frequency
+    face : float
+          Face value of the bond
+    redeem : float
+          Redemption value
+    daycount : daycounter
+          This class has day_count and year_fraction methods
+    guess : float
+          Initial guess of the yield for the root finder
+
+    Returns
+    -------
+    float
+         Static spread (Z-spread)
+
+    Examples
+    --------
+    >>> round(static_zero_spread(
+    ...     cpn=5e-2, mat=2, freq=1, price=91.63122843617106,
+    ...     zero_price_fn=make_zero_price_fun(
+    ...         zero_at_coupon_dates=[2.5e-2, 9.5e-2])),
+    ... 6)
+    0.005
+    """
+
+    def zero_price_fn_with_spread(spread, freq):
+        def f(t):
+            cc_yld = -log(zero_price_fn(t)) / t
+            new_yld = equiv_rate(cc_yld, np.inf, freq) + spread
+            new_cc_yld = equiv_rate(new_yld, freq, np.inf)
+            return exp(-new_cc_yld * t)
+        return f
+
+    def one_spread(settle, cpn, mat, price, zero_price_fn,
+                   freq, face, redeem, daycount, guess):
+        return newton_wrapper(
+            lambda spread: zero_curve_bond_price(
+                settle=settle, cpn=cpn, mat=mat,
+                zero_price_fn=zero_price_fn_with_spread(spread, freq),
+                freq=freq, face=face,
+                redeem=redeem, daycount=daycount) - price,
+            guess)
+    spread = vectorize(one_spread)
+    result = spread(settle=settle, cpn=cpn, mat=mat, price=price,
+                    zero_price_fn=zero_price_fn, freq=freq, face=face,
+                    redeem=redeem, daycount=daycount, guess=guess)
+    return result[()]
