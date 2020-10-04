@@ -326,9 +326,9 @@ def zero_curve_bond_price_breakup(
     # print(res)
 
     def one_dirty_price(n, fraction, coupon, R_by_F, zp_fun):
-        t = arange(n) + fraction
+        t = (arange(n) + fraction) / freq
         df = zp_fun(t)
-        cf = [coupon] * int(n-1) + [cpn + R_by_F]
+        cf = [coupon/freq] * int(n-1) + [coupon/freq + R_by_F]
         # import pandas as pd
         # print(pd.DataFrame(dict(df=df, cf=cf), index=t))
         return dot(df, cf)
@@ -399,11 +399,11 @@ def zero_curve_bond_price(settle=None, cpn=0, mat=1,
     91.63122843617106
 
     >>> zero_curve_bond_price(
-    ...     cpn=5e-2, mat=5, freq=1,
+    ...     cpn=5.792982e-2, mat=6, freq=2,
     ...     zero_price_fn=make_zero_price_fun(
-    ...         nelson_siegel=(0.0893088, -0.0314768, -0.0130352, 3.51166))
-    ... )  # doctest: +NORMALIZE_WHITESPACE
-    91.52820186007517
+    ...         nelson_siegel=(6.784e-2, -3.8264e-2, -3.6631e-2, 0.7774))
+    ... )
+    99.99999939355965
 
     """
     return zero_curve_bond_price_breakup(
@@ -463,9 +463,9 @@ def zero_curve_bond_duration(settle=None, cpn=0, mat=1,
     res = bond_coupon_periods(settle, mat, freq, daycount)
 
     def one_duration(n, fraction, coupon, R_by_F, zp_fun):
-        t = arange(n) + fraction
+        t = (arange(n) + fraction) / freq
         df = zp_fun(t)
-        cf = [coupon] * int(n-1) + [cpn + R_by_F]
+        cf = [coupon/freq] * int(n-1) + [coupon/freq + R_by_F]
         # import pandas as pd
         # print(pd.DataFrame(dict(df=df, cf=cf), index=t))
         return dot(df, cf * t) / dot(df, cf)
