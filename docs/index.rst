@@ -15,6 +15,12 @@ Bond Valuation using zero curve
 .. automodule:: bond_pricing.zero_curve_bond_price
    :members:
 
+Bond Valuation Key Rate Shifts
+==============================
+
+.. automodule:: bond_pricing.key_rates
+   :members:
+
 Present Value and Annuities
 ===========================
 

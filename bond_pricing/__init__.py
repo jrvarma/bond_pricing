@@ -10,3 +10,6 @@ from bond_pricing.zero_curve_bond_price import (  # noqa E401
     par_yld_to_zero, zero_to_par, nelson_siegel_zero_rate,
     make_zero_price_fun, zero_curve_bond_price_breakup,
     zero_curve_bond_price)
+from bond_pricing.key_rates import (  # noqa E401
+    key_rate_shift, make_KRS,
+    standard_krs_points, key_rate_shifted_zero_curve)

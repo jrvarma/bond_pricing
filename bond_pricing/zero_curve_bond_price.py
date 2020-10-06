@@ -15,9 +15,9 @@ def par_yld_to_zero(par, freq=1, return_dataframe=False):
     par : sequence of floats
           The par bond yields for various maturities in decimal
           Maturities are spaced 1/freq years apart
-    freq : int
+    freq : int, optional
           The coupon frequency (equals compounding frequency)
-    return_dataframe : bool
+    return_dataframe : bool, optional
          whether to return pandas DataFrame instead of dict
     Returns
     -------
@@ -75,17 +75,20 @@ def par_yld_to_zero(par, freq=1, return_dataframe=False):
 def zero_to_par(zero_prices=None, zero_yields=None, freq=1):
     r"""Convert zero yield curve into par curve
 
+    The zero curve can be specified either as prices or as yields.
+    One of `zero_prices` and `zero_yields` must not be None.
+
     Parameters
     ----------
-    zero_prices : sequence of floats
+    zero_prices : sequence of floats, optional
              The zero prices for various maturities in decimal
              Either zero_prices or zero_yields must be provided
              If both are provided, zero_yields is ignored
              Maturities are spaced 1/freq years apart
-    zero_yields : sequence of floats
+    zero_yields : sequence of floats, optional
              The zero yields for various maturities in decimal
              Maturities are spaced 1/freq years apart
-    freq : int
+    freq : int, optional
           The coupon frequency (equals compounding frequency)
 
     Returns
@@ -178,25 +181,31 @@ def make_zero_price_fun(flat_curve=None,
                         freq=1, max_maturity=None):
     r"""Create function that returns zero price for any maturity
 
+    The zero curve can be specified in many alternative ways:
+    `flat_curve`, `nelson_siegel`, `par_at_knots`,
+    `par_at_coupon_dates`, `zero_at_knots`, `zero_at_coupon_dates`.
+    One of these must not be None.
+
+
     Parameters
     ----------
-    flat_curve : float
+    flat_curve : float, optional
            Yield (flat yield curve)
-    nelson_siegel : tuple of floats
+    nelson_siegel : tuple of floats, optional
            tuple consists of beta0, beta1, beta2, tau
-    par_at_knots : tuple of two sequences of floats
+    par_at_knots : tuple of two sequences of floats, optional
            First element of tuple is a sequence of maturities
            Second element is a sequence of par yields for these maturities
-    par_at_coupon_dates : sequence of floats
+    par_at_coupon_dates : sequence of floats, optional
            Par yields for maturities spaced 1/freq years apart
-    zero_at_knots : tuple of two sequences of floats
+    zero_at_knots : tuple of two sequences of floats, optional
            First element of tuple is a sequence of maturities
            Second element is a sequence of zero rates for these maturities
-    zero_at_coupon_dates : sequence
+    zero_at_coupon_dates : sequence, optional
           Zero yields for maturities spaced 1/freq years apart
-    freq : int
+    freq : int, optional
           The coupon frequency (equals compounding frequency)
-    max_maturity : float
+    max_maturity : float, optional
           The maximum maturity upto which the yields are to be
           extrapolated. If None, no extrapolation is done.
 
@@ -215,7 +224,8 @@ def make_zero_price_fun(flat_curve=None,
 
     """
     if flat_curve is not None:
-        return lambda t: exp(-array(t) * log(1 + flat_curve))[()]
+        r = equiv_rate(flat_curve, freq, np.inf)
+        return lambda t: exp(- r * array(t))[()]
     if nelson_siegel is not None:
         beta0, beta1, beta2, tau = nelson_siegel
         return lambda m: exp(- nelson_siegel_zero_rate(
@@ -248,9 +258,10 @@ def make_zero_price_fun(flat_curve=None,
             max_maturity = max(t)
         zero_at_coupon_dates = CubicSpline(t, r)(
             arange(ceil(max_maturity*freq))+1)
-    zero_at_coupon_dates = array(zero_at_coupon_dates)
+    zero_at_coupon_dates = equiv_rate(zero_at_coupon_dates,
+                                      from_freq=freq, to_freq=np.inf)
     t = arange(len(zero_at_coupon_dates) + 1) / freq
-    log_zero_df = -log(concatenate([[1], 1 + zero_at_coupon_dates])) * t
+    log_zero_df = -concatenate([[0], zero_at_coupon_dates]) * t
     return lambda x: exp(interp(x, t, log_zero_df, left=nan, right=nan))
 
 
