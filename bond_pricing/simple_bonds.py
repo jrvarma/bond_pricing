@@ -40,10 +40,11 @@ def _bond_coupon_periods_0(settle=None, mat=1, freq=2, daycount=None):
             n -= 1
         next_coupon = edate(mature, -n * 12 / freq)
         prev_coupon = edate(next_coupon, -12/freq)
-        if prev_coupon != settle:
-            # we are in the middle of a coupon period
-            # no of coupons is One PLUS No of full coupon periods
-            n += 1
+        n += 1
+        # if prev_coupon != settle:
+        #     # we are in the middle of a coupon period
+        #     # no of coupons is One PLUS No of full coupon periods
+        #     n += 1
         if daycount is None:
             daycounter = default_daycounter
         else:
@@ -231,9 +232,9 @@ def bond_price_breakup(settle=None, cpn=0, mat=1, yld=0, freq=2,
     ... freq=[1,2,4],
     ... return_dataframe=True)
       DirtyPrice AccruedInterest CleanPrice NextCoupon PreviousCoupon
-    0    96.6432         2.31111    94.3321 2013-01-01     2012-01-01
-    1    96.6156         2.31111    94.3045 2012-07-01     2012-01-01
-    2    94.5949        0.311111    94.2838 2012-07-01     2012-04-01
+    0  96.643228        2.311111  94.332117 2013-01-01     2012-01-01
+    1  96.615606        2.311111  94.304495 2012-07-01     2012-01-01
+    2  94.594888        0.311111  94.283777 2012-07-01     2012-04-01
 
     """
     # None can make comp_freq an array of objects
@@ -314,6 +315,9 @@ def bond_price(settle=None, cpn=0, mat=1,
     array([94.33211715988098, 94.30449490379667, 94.28377717535678],
           dtype=object)
 
+    >>> bond_price(settle = "2021-01-01", mat = "2031-01-01",
+    ...            yld = 1e-2, freq = 2, cpn = 5e-2)
+    137.9748382933389
     """
     return bond_price_breakup(
         settle=settle, cpn=cpn, mat=mat, yld=yld, freq=freq,
