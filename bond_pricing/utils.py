@@ -7,13 +7,16 @@
 `dataframe_like_dict` creates pandas DataFrame from dict like arguments
 
 """
-from scipy.optimize import newton
 import pandas as pd
 import numpy as np
+from bond_pricing.no_scipy_workarounds import my_irr, no_scipy
 
 
 def newton_wrapper(f, guess, warn=True):
     r"""Wrapper for `scipy.optimize.newton` to return root or `nan`
+
+    If scipy cannot be imported, falls back on the my_irr function
+    that uses root bracketing and bisection.
 
     Parameters
     ----------
@@ -36,6 +39,11 @@ def newton_wrapper(f, guess, warn=True):
     >>> newton_wrapper(lambda x: x**2 + 1, 1, warn=False)
     nan
     """
+    try:
+        from scipy.optimize import newton
+    except ImportError:
+        no_scipy.warn("newton")
+        return my_irr(f, guess=guess, warn=warn)
     root, status = newton(f, guess, full_output=True, disp=False)
     if status.converged:
         return root

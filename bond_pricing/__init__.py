@@ -9,7 +9,10 @@ from bond_pricing.utils import (newton_wrapper, edate)  # noqa E401
 from bond_pricing.zero_curve_bond_price import (  # noqa E401
     par_yld_to_zero, zero_to_par, nelson_siegel_zero_rate,
     make_zero_price_fun, zero_curve_bond_price_breakup,
-    zero_curve_bond_price)
+    zero_curve_bond_price, zero_curve_bond_duration,
+    static_zero_spread)
 from bond_pricing.key_rates import (  # noqa E401
     key_rate_shift, make_KRS,
     standard_krs_points, key_rate_shifted_zero_curve)
+from bond_pricing.no_scipy_workarounds import (  # noqa E401
+    my_irr, no_scipy)

@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'bond_pricing'
-copyright = '2020, Prof. Jayanth R. Varma'
+copyright = '2020, 2021, 2022 Prof. Jayanth R. Varma'
 author = 'Prof. Jayanth R. Varma'
 
 

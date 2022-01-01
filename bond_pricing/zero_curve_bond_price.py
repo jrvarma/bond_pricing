@@ -2,9 +2,9 @@ from numpy import (array, arange, empty_like, vectorize,  # noqa E401
                    ceil, log, exp, interp, nan, where, dot,
                    concatenate)
 import numpy as np
-from scipy.interpolate import CubicSpline
 from bond_pricing.simple_bonds import bond_coupon_periods, equiv_rate
 from bond_pricing.utils import newton_wrapper, dict_to_dataframe
+from bond_pricing.no_scipy_workarounds import no_scipy
 
 
 def par_yld_to_zero(par, freq=1, return_dataframe=False):
@@ -240,8 +240,8 @@ def make_zero_price_fun(flat_curve=None,
                 warn("A knot point at zero maturity is recommended.")
         if max_maturity is None:
             max_maturity = max(t)
-        par_at_coupon_dates = CubicSpline(t, r)(
-            arange(ceil(max_maturity*freq))+1)
+        par_at_coupon_dates = interpolate(
+            t, r, arange(ceil(max_maturity*freq))+1)
     if par_at_coupon_dates is not None:
         zero_at_coupon_dates = par_yld_to_zero(par_at_coupon_dates,
                                                freq)['zero_yields']
@@ -256,8 +256,8 @@ def make_zero_price_fun(flat_curve=None,
                 warn("A knot point at zero maturity is recommended.")
         if max_maturity is None:
             max_maturity = max(t)
-        zero_at_coupon_dates = CubicSpline(t, r)(
-            arange(ceil(max_maturity*freq))+1)
+        zero_at_coupon_dates = interpolate(
+            t, r, arange(ceil(max_maturity*freq))+1)
     zero_at_coupon_dates = equiv_rate(zero_at_coupon_dates,
                                       from_freq=freq, to_freq=np.inf)
     t = arange(len(zero_at_coupon_dates) + 1) / freq
@@ -557,3 +557,12 @@ def static_zero_spread(settle=None, cpn=0, mat=1, price=None,
                     zero_price_fn=zero_price_fn, freq=freq, face=face,
                     redeem=redeem, daycount=daycount, guess=guess)
     return result[()]
+
+
+def interpolate(t, r, x):
+    try:
+        from scipy.interpolate import CubicSpline
+    except ImportError:
+        no_scipy.warn("CubicSpline")
+        return np.interp(x, t, r)
+    return CubicSpline(t, r)(x)
