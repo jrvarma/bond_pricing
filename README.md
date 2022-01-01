@@ -41,4 +41,11 @@ The bond valuation functions can be used in two modes:
 
 This module requires `numpy`, `pandas` and `scipy`. In some environments, installing `scipy` may be difficult, and only a couple of functions (the `newton` root finder and `CubicSpline` interpolation) are actually needed from the huge `scipy` package. So a provision has been made to avoid `scipy` with some loss of functionality (the `newton` root finder is replaced by a less sophisticated root bracketing and bisection algorithm and `CubicSpline` interpolation is replaced by the much cruder linear interpolation). At run time, the module checks for the availability of `scipy` and uses the cruder methods (with a suitable warning) if `scipy` is not available.
 
-To install this package without pulling in `scipy` as a dependency, set the environment variable `no_scipy` to any arbitrary value. In `Linux`, you can do: `no_scipy=1 pip install bond_pricing`. In Windows, you might need to do `set no_scipy=1` before calling `pip install bond_pricing`.
+To install this package without pulling in `scipy` as a dependency, do the following:
+
+```
+git clone https://github.com/jrvarma/bond_pricing.git
+export no_scipy=1
+cd bond_pricing
+python setup.py install
+```
