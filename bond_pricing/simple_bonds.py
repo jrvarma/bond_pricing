@@ -36,11 +36,12 @@ def _bond_coupon_periods_0(settle=None, mat=1, freq=2, daycount=None):
         n = int(freq * (mature - settle).days / 360)
         # the divisor of 360 guarantees this is an overestimate
         # we keep reducing n till it is right
-        while(edate(mature, -n * 12 / freq) <= settle):
+        while (edate(mature, -n * 12 / freq) <= settle):
             n -= 1
         next_coupon = edate(mature, -n * 12 / freq)
-        prev_coupon = edate(next_coupon, -12/freq)
-        n += 1
+        n += 1  # n is now number of full coupons since previous coupon
+        prev_coupon = edate(mature, -n * 12 / freq)
+        # old wrong code: prev_coupon = edate(next_coupon, -12/freq)
         # if prev_coupon != settle:
         #     # we are in the middle of a coupon period
         #     # no of coupons is One PLUS No of full coupon periods

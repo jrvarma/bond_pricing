@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bond_pricing"
+version = "0.7.1"
+dynamic = ["dependencies"]
+authors = [{name = "Jayanth R. Varma", email = "jrvarma@gmail.com"}]
+maintainers = [{name = "Jayanth R. Varma", email = "jrvarma@gmail.com"}]
+description = "Bond Price with YTM/zero-curve & NPV, IRR, annuities"
+readme = "README.md"
+license = {text = "OSI Approved :: GNU General Public License v3 (GPLv3)"}
+keywords = ["Bond Pricing", "NPV and IRR", "Zero yield curve",
+            "Annuities and Perpetuities"]
+classifiers=[
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Programming Language :: Python :: 3",
+]
+requires-python = ">= 3.0"
+
+[project.urls]
+Homepage = "https://github.com/jrvarma/bond_pricing"
+
+[tool.setuptools]
+packages = ["bond_pricing"]

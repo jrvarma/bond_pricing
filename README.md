@@ -46,6 +46,5 @@ To install this package without pulling in `scipy` as a dependency, do the follo
 ```
 git clone https://github.com/jrvarma/bond_pricing.git
 export no_scipy=1
-cd bond_pricing
-python setup.py install
+pip install bond_pricing
 ```
