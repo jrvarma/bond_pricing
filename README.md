@@ -1,3 +1,9 @@
+# Installation
+
+`pip install bond_pricing`
+
+For installation without pulling in `scipy` as a dependency, see [below](#no-scipy)
+
 # Overview
 
 This package provides bond pricing functions as well as basic NPV/IRR functions. Bond valuation can be done using an yield to maturity or using a zero yield curve. There is a convenience function to construct a zero yield curve from a few points on the par bond or zero yield curve or from Nelson Siegel parameters.
@@ -37,7 +43,7 @@ The bond valuation functions can be used in two modes:
     
   In these functions also, the cash flow frequency may be different from the compounding frequency.
 
-# Reducing Dependencies
+# Reducing Dependencies {#no-scipy}
 
 This module requires `numpy`, `pandas` and `scipy`. In some environments, installing `scipy` may be difficult, and only a couple of functions (the `newton` root finder and `CubicSpline` interpolation) are actually needed from the huge `scipy` package. So a provision has been made to avoid `scipy` with some loss of functionality (the `newton` root finder is replaced by a less sophisticated root bracketing and bisection algorithm and `CubicSpline` interpolation is replaced by the much cruder linear interpolation). At run time, the module checks for the availability of `scipy` and uses the cruder methods (with a suitable warning) if `scipy` is not available.
 
