@@ -4,6 +4,8 @@
 
 For installation without pulling in `scipy` as a dependency, see [below](#reducing-dependencies)
 
+The source code is at <https://github.com/jrvarma/bond_pricing> if you want to go that route.
+
 # Overview
 
 This package provides bond pricing functions as well as basic NPV/IRR functions. Bond valuation can be done using an yield to maturity or using a zero yield curve. There is a convenience function to construct a zero yield curve from a few points on the par bond or zero yield curve or from Nelson Siegel parameters.
