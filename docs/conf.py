@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'bond_pricing'
-copyright = '2020, 2021, 2022 Prof. Jayanth R. Varma'
+copyright = '2020-2024 Prof. Jayanth R. Varma'
 author = 'Prof. Jayanth R. Varma'
 
 
@@ -30,10 +30,18 @@ author = 'Prof. Jayanth R. Varma'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
-    'm2r2', # https://github.com/CrossNox/m2r2
+    # 'sphinx_mdinclude',
+    'myst_parser',
 ]
 
-source_suffix = ['.rst', '.md'] # https://github.com/CrossNox/m2r2
+myst_heading_anchors = 2
+
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.txt': 'markdown',
+    '.md': 'markdown',
+}
+# source_suffix = ['.rst', '.md'] # https://github.com/CrossNox/m2r2
 
 master_doc = 'index'
 

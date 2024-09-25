@@ -30,7 +30,7 @@ def pvaf(r, n):
 
     Examples
     --------
-    >>> pvaf(r=0.1, n=10)
+    >>> pvaf(r=0.1, n=10).item()
     6.144567105704685
 
     >>> pvaf(10e-2, [5, 10])
@@ -63,7 +63,7 @@ def fvaf(r, n):
 
     Examples
     --------
-    >>> fvaf(r=0.1, n=10)
+    >>> fvaf(r=0.1, n=10).item()
     15.937424601000023
     >>> fvaf(r=[0, 0.1], n=10)
     array([10.       , 15.9374246])
@@ -104,7 +104,7 @@ def npv(cf, rate, cf_freq=1, comp_freq=1, cf_t=None,
 
     Examples
     --------
-    >>> npv(cf=[-100, 150, -50, 75], rate=5e-2)
+    >>> npv(cf=[-100, 150, -50, 75], rate=5e-2).item()
     59.327132213429586
 
     >>> npv(cf=[-100, 150, -50, 75], rate=5e-2, comp_freq=[1, 2])
@@ -210,7 +210,7 @@ def duration(cf, rate, cf_freq=1, comp_freq=1, cf_t=None,
 
     Examples
     --------
-    >>> duration(cf=[100, 50, 75, 25], rate=10e-2)
+    >>> duration(cf=[100, 50, 75, 25], rate=10e-2).item()
     1.9980073065426769
 
     >>> duration(cf=[100, 50, 75, 25], rate=10e-2,
@@ -267,13 +267,13 @@ def irr(cf, cf_freq=1, comp_freq=1, cf_t=None, r_guess=10e-2):
 
     Examples
     --------
-    >>> irr(cf=[-100, 150, -50, 75])
+    >>> irr(cf=[-100, 150, -50, 75]).item()
     0.4999999999999994
 
-    >>> irr(cf=[-100, 150, -50, 75], cf_freq=1, comp_freq=2)
+    >>> irr(cf=[-100, 150, -50, 75], cf_freq=1, comp_freq=2).item()
     0.4494897427831782
 
-    >>> irr(cf=[-100, 150, -50, 75], cf_t=[0, 2, 5, 7])
+    >>> irr(cf=[-100, 150, -50, 75], cf_t=[0, 2, 5, 7]).item()
     0.2247448713915599
 
     >>> irr(cf=(-100, 230, -132), r_guess=[0.13, 0.18])
@@ -323,7 +323,7 @@ def annuity_pv(rate, n_periods=np.inf, instalment=1, terminal_payment=0,
 
     Examples
     --------
-    >>> annuity_pv(rate=10e-2, n_periods=15, instalment=500)
+    >>> annuity_pv(rate=10e-2, n_periods=15, instalment=500).item()
     3803.039753154183
     >>> annuity_pv(rate=10e-2, n_periods=[10, 15], instalment=500)
     array([3072.28355285, 3803.03975315])
@@ -369,7 +369,7 @@ def annuity_fv(rate, n_periods=np.inf, instalment=1, terminal_payment=0,
 
     Examples
     --------
-    >>> annuity_fv(rate=10e-2, n_periods=15, instalment=500)
+    >>> annuity_fv(rate=10e-2, n_periods=15, instalment=500).item()
     15886.240847078281
     >>> annuity_fv(rate=10e-2, n_periods=[10, 15], instalment=500)
     array([ 7968.7123005 , 15886.24084708])
@@ -419,7 +419,7 @@ def annuity_instalment(rate, n_periods=np.inf, pv=None, fv=None,
 
     Examples
     --------
-    >>> annuity_instalment(rate=10e-2, n_periods=15, pv=3803.04)
+    >>> annuity_instalment(rate=10e-2, n_periods=15, pv=3803.04).item()
     500.0000324537518
 
     >>> annuity_instalment(rate=10e-2, n_periods=[10, 15], pv=3803.04)
@@ -473,11 +473,11 @@ def annuity_periods(rate, instalment=1, pv=None, fv=None,
 
     Examples
     --------
-    >>> annuity_periods(rate=10e-2, instalment=500, pv=3803.04)
+    >>> annuity_periods(rate=10e-2, instalment=500, pv=3803.04).item()
     15.000002163748604
 
     >>> annuity_periods(rate=10e-2, instalment=500, pv=3803.04,
-    ...      round2int_digits=4)
+    ...      round2int_digits=4).item()
     15.0
 
     >>> annuity_periods(rate=[0, 10e-2], instalment=500, pv=3803.04)
@@ -561,7 +561,7 @@ def annuity_rate(n_periods=np.inf, instalment=1, pv=None, fv=None,
 
     Examples
     --------
-    >>> annuity_rate(n_periods=15, instalment=500, pv=3803.04)
+    >>> annuity_rate(n_periods=15, instalment=500, pv=3803.04).item()
     0.09999998862890495
 
     >>> annuity_rate(n_periods=[9, 10, 15], instalment=100, pv=1000)
@@ -640,8 +640,9 @@ def annuity_instalment_breakup(
 
     Examples
     --------
-    >>> annuity_instalment_breakup(rate=10e-2, n_periods=15, pv=3803.04,
-    ...       period_no=6)  # doctest: +NORMALIZE_WHITESPACE
+    >>> {k: v.item() for k,v in
+    ...    annuity_instalment_breakup(rate=10e-2, n_periods=15, pv=3803.04,
+    ...       period_no=6).items()}  # doctest: +NORMALIZE_WHITESPACE
     {'Period No': 6,
      'Opening Principal': 3072.283752266599,
      'Instalment': 500.0000324537518,

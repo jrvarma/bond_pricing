@@ -1,7 +1,11 @@
-.. contents:: Table of Contents
-   :depth: 2
+```{contents} Table of Contents
+:depth: 2
+```
 
-.. mdinclude:: ../README.md
+```{include} ../README.md
+```
+
+```{eval-rst}
    
 Bond Valuation using YTM
 ========================
@@ -39,3 +43,5 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+```

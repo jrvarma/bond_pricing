@@ -312,9 +312,9 @@ def zero_curve_bond_price_breakup(
     ...     cpn=10e-2, mat=10, freq=1,
     ...     zero_price_fn=make_zero_price_fun(
     ...         flat_curve=8e-2))  # doctest: +NORMALIZE_WHITESPACE
-    {'DirtyPrice': 113.42016279788285,
-     'AccruedInterest': 0.0,
-     'CleanPrice': 113.42016279788285,
+    {'DirtyPrice': np.float64(113.42016279788285),
+     'AccruedInterest': np.float64(0.0),
+     'CleanPrice': np.float64(113.42016279788285),
      'NextCoupon': None,
      'PreviousCoupon': None}
 
@@ -323,9 +323,9 @@ def zero_curve_bond_price_breakup(
     ...     zero_price_fn=make_zero_price_fun(
     ...         zero_at_coupon_dates=[3e-2, 10e-2])
     ... )  # doctest: +NORMALIZE_WHITESPACE
-    {'DirtyPrice': 91.63122843617106,
-     'AccruedInterest': 0.0,
-     'CleanPrice': 91.63122843617106,
+    {'DirtyPrice': np.float64(91.63122843617106),
+     'AccruedInterest': np.float64(0.0),
+     'CleanPrice': np.float64(91.63122843617106),
      'NextCoupon': None,
      'PreviousCoupon': None}
 
@@ -399,21 +399,21 @@ def zero_curve_bond_price(settle=None, cpn=0, mat=1,
     >>> zero_curve_bond_price(
     ...     cpn=10e-2, mat=10, freq=1,
     ...     zero_price_fn=make_zero_price_fun(
-    ...         flat_curve=8e-2))  # doctest: +NORMALIZE_WHITESPACE
+    ...         flat_curve=8e-2)).item()  # doctest: +NORMALIZE_WHITESPACE
     113.42016279788285
 
     >>> zero_curve_bond_price(
     ...     cpn=5e-2, mat=2, freq=1,
     ...     zero_price_fn=make_zero_price_fun(
     ...         zero_at_coupon_dates=[3e-2, 10e-2])
-    ... )  # doctest: +NORMALIZE_WHITESPACE
+    ... ).item()  # doctest: +NORMALIZE_WHITESPACE
     91.63122843617106
 
     >>> zero_curve_bond_price(
     ...     cpn=5.792982e-2, mat=6, freq=2,
     ...     zero_price_fn=make_zero_price_fun(
     ...         nelson_siegel=(6.784e-2, -3.8264e-2, -3.6631e-2, 0.7774))
-    ... )
+    ... ).item()
     99.99999939355965
 
     """
@@ -459,13 +459,13 @@ def zero_curve_bond_duration(settle=None, cpn=0, mat=1,
     >>> zero_curve_bond_duration(
     ...     cpn=10e-2, mat=10, freq=1,
     ...     zero_price_fn=make_zero_price_fun(
-    ...         flat_curve=8e-2))  # doctest: +NORMALIZE_WHITESPACE
+    ...         flat_curve=8e-2)).item()  # doctest: +NORMALIZE_WHITESPACE
     6.965803939497351
     >>> zero_curve_bond_duration(
     ...     cpn=5e-2, mat=2, freq=1,
     ...     zero_price_fn=make_zero_price_fun(
     ...         zero_at_coupon_dates=[3e-2, 10e-2])
-    ... )  # doctest: +NORMALIZE_WHITESPACE
+    ... ).item()  # doctest: +NORMALIZE_WHITESPACE
     1.9470227670753064
     """
     freq, cpn = array(freq), array(cpn)
@@ -531,7 +531,7 @@ def static_zero_spread(settle=None, cpn=0, mat=1, price=None,
     ...     cpn=5e-2, mat=2, freq=1, price=91.63122843617106,
     ...     zero_price_fn=make_zero_price_fun(
     ...         zero_at_coupon_dates=[2.5e-2, 9.5e-2])),
-    ... 6)
+    ... 6).item()
     0.005
     """
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bond_pricing"
-version = "0.7.2"
+version = "0.7.3"
 dynamic = ["dependencies"]
 authors = [{name = "Jayanth R. Varma", email = "jrvarma@gmail.com"}]
 maintainers = [{name = "Jayanth R. Varma", email = "jrvarma@gmail.com"}]

@@ -34,7 +34,7 @@ def newton_wrapper(f, guess, warn=True):
          The root if found, numpy.nan otherwise.
     Examples
     --------
-    >>> newton_wrapper(lambda x: x**2 - x, 0.8)
+    >>> newton_wrapper(lambda x: x**2 - x, 0.8).item()
     1.0
     >>> newton_wrapper(lambda x: x**2 + 1, 1, warn=False)
     nan
