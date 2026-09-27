@@ -122,8 +122,9 @@ def npv(cf, rate, cf_freq=1, comp_freq=1, cf_t=None,
     def one_npv(rate, cf_freq, comp_freq, immediate_start):
         if cf_t is None:
             start = 0 if immediate_start else 1/cf_freq
-            stop = start + len(cf) / cf_freq
-            cf_ta = np.arange(start=start, step=1/cf_freq, stop=stop)
+            stop = start + (len(cf) - 1) / cf_freq
+            # cf_ta = np.arange(start=start, step=1/cf_freq, stop=stop)
+            cf_ta = np.linspace(start=start, stop=stop, num=len(cf))
         else:
             cf_ta = array(cf_t)
         cc_rate = equiv_rate(rate, from_freq=comp_freq, to_freq=np.inf)
@@ -381,7 +382,6 @@ def annuity_fv(rate, n_periods=np.inf, instalment=1, terminal_payment=0,
     cf_freq, comp_freq = array(cf_freq), array(comp_freq)
     r = equiv_rate(rate, comp_freq, cf_freq)/cf_freq
     tv = fvaf(r, n_periods) * instalment + terminal_payment
-    tv *= where(immediate_start, 1 + r, 1)
     return tv[()]
 
 
@@ -433,7 +433,8 @@ def annuity_instalment(rate, n_periods=np.inf, pv=None, fv=None,
         pv = pv or 0
     fv, pv, n_periods = array(fv), array(pv), array(n_periods)
     r = equiv_rate(rate, comp_freq, cf_freq)/cf_freq
-    reqd_annuity_pv = pv + (fv - terminal_payment) / (1 + r)**n_periods
+    reqd_annuity_pv = pv / where(immediate_start, 1 + r, 1) + (
+        fv - terminal_payment) / (1 + r)**n_periods
     return (reqd_annuity_pv / pvaf(r, n_periods))[()]
 
 
