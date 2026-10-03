@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bond_pricing"
-version = "1.0.0"
+version = "1.0.1"
 dynamic = ["dependencies"]
 authors = [{name = "Jayanth R. Varma", email = "jrvarma@gmail.com"}]
 maintainers = [{name = "Jayanth R. Varma", email = "jrvarma@gmail.com"}]
 description = "Bond Price with YTM/zero-curve & NPV, IRR, annuities"
 readme = "README.md"
-license = {text = "OSI Approved :: GNU General Public License v3 (GPLv3)"}
+license = "GPL-3.0-or-later"
 keywords = ["Bond Pricing", "NPV and IRR", "Zero yield curve",
             "Annuities and Perpetuities"]
 classifiers=[

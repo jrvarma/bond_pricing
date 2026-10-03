@@ -103,7 +103,7 @@ def zero_to_par(zero_prices=None, zero_yields=None, freq=1):
     ... zero_yields=[0.0102    , 0.0120054 , 0.01421996, 0.01644462,
     ...              0.01924529, 0.02206823, 0.02462961, 0.02721789,
     ...              0.0298373 , 0.0324924 ],
-    ... freq=2)  # doctest: +NORMALIZE_WHITESPACE
+    ... freq=2).round(8)  # doctest: +NORMALIZE_WHITESPACE
     array([0.0102  , 0.012   , 0.0142  , 0.0164  , 0.01915 , 0.0219  ,
            0.024375, 0.02685 , 0.029325, 0.0318  ])
 
@@ -111,7 +111,7 @@ def zero_to_par(zero_prices=None, zero_yields=None, freq=1):
     ... zero_prices=[0.99492588, 0.98810183, 0.97896982, 0.96777586,
     ...              0.9532451 , 0.9362787 , 0.91789052, 0.89750426,
     ...              0.87522337, 0.85115892],
-    ... freq=2)  # doctest: +NORMALIZE_WHITESPACE
+    ... freq=2).round(8)  # doctest: +NORMALIZE_WHITESPACE
     array([0.0102  , 0.012   , 0.0142  , 0.0164  , 0.01915 , 0.0219  ,
            0.024375, 0.02685 , 0.029325, 0.0318  ])
 
@@ -154,11 +154,11 @@ def nelson_siegel_zero_rate(beta0, beta1, beta2, tau, m):
     Examples
     --------
     >>> nelson_siegel_zero_rate(0.128397, -0.024715, -0.050231, 2.0202,
-    ...                         [0.25, 5, 15, 30])
+    ...                         [0.25, 5, 15, 30]).round(8)
     array([0.10228692, 0.10489195, 0.11833924, 0.12335016])
 
     >>> nelson_siegel_zero_rate(0.0893088, -0.0314768, -0.0130352,
-    ...                         3.51166, [0.25, 5, 15, 30])
+    ...                         3.51166, [0.25, 5, 15, 30]).round(8)
     array([0.05848376, 0.06871299, 0.07921554, 0.08410199])
 
     """
@@ -308,26 +308,30 @@ def zero_curve_bond_price_breakup(
 
     Examples
     --------
-    >>> zero_curve_bond_price_breakup(
+    >>> import pandas as pd
+    >>> pd.Series(zero_curve_bond_price_breakup(
     ...     cpn=10e-2, mat=10, freq=1,
     ...     zero_price_fn=make_zero_price_fun(
-    ...         flat_curve=8e-2))  # doctest: +NORMALIZE_WHITESPACE
-    {'DirtyPrice': np.float64(113.42016279788285),
-     'AccruedInterest': np.float64(0.0),
-     'CleanPrice': np.float64(113.42016279788285),
-     'NextCoupon': None,
-     'PreviousCoupon': None}
+    ...         flat_curve=8e-2)))  # doctest: +NORMALIZE_WHITESPACE
+    DirtyPrice         113.420163
+    AccruedInterest      0.000000
+    CleanPrice         113.420163
+    NextCoupon                NaN
+    PreviousCoupon            NaN
+    dtype: float64
 
-    >>> zero_curve_bond_price_breakup(
+    >>> import pandas as pd
+    >>> pd.Series(zero_curve_bond_price_breakup(
     ...     cpn=5e-2, mat=2, freq=1,
     ...     zero_price_fn=make_zero_price_fun(
     ...         zero_at_coupon_dates=[3e-2, 10e-2])
-    ... )  # doctest: +NORMALIZE_WHITESPACE
-    {'DirtyPrice': np.float64(91.63122843617106),
-     'AccruedInterest': np.float64(0.0),
-     'CleanPrice': np.float64(91.63122843617106),
-     'NextCoupon': None,
-     'PreviousCoupon': None}
+    ... ))  # doctest: +NORMALIZE_WHITESPACE
+    DirtyPrice         91.631228
+    AccruedInterest     0.000000
+    CleanPrice         91.631228
+    NextCoupon               NaN
+    PreviousCoupon           NaN
+    dtype: float64
 
     """
     freq, cpn = array(freq), array(cpn)
@@ -396,25 +400,23 @@ def zero_curve_bond_price(settle=None, cpn=0, mat=1,
 
     Examples
     --------
-    >>> zero_curve_bond_price(
+    >>> round(zero_curve_bond_price(
     ...     cpn=10e-2, mat=10, freq=1,
     ...     zero_price_fn=make_zero_price_fun(
-    ...         flat_curve=8e-2)).item()  # doctest: +NORMALIZE_WHITESPACE
-    113.42016279788285
-
-    >>> zero_curve_bond_price(
+    ...         flat_curve=8e-2)).item(), 8)  # doctest: +NORMALIZE_WHITESPACE
+    113.4201628
+    >>> round(zero_curve_bond_price(
     ...     cpn=5e-2, mat=2, freq=1,
     ...     zero_price_fn=make_zero_price_fun(
     ...         zero_at_coupon_dates=[3e-2, 10e-2])
-    ... ).item()  # doctest: +NORMALIZE_WHITESPACE
-    91.63122843617106
-
-    >>> zero_curve_bond_price(
+    ... ).item(), 8)  # doctest: +NORMALIZE_WHITESPACE
+    91.63122844
+    >>> round(zero_curve_bond_price(
     ...     cpn=5.792982e-2, mat=6, freq=2,
     ...     zero_price_fn=make_zero_price_fun(
     ...         nelson_siegel=(6.784e-2, -3.8264e-2, -3.6631e-2, 0.7774))
-    ... ).item()
-    99.99999939355965
+    ... ).item(), 8)
+    99.99999939
 
     """
     return zero_curve_bond_price_breakup(
@@ -456,17 +458,17 @@ def zero_curve_bond_duration(settle=None, cpn=0, mat=1,
 
     Examples
     --------
-    >>> zero_curve_bond_duration(
+    >>> round(zero_curve_bond_duration(
     ...     cpn=10e-2, mat=10, freq=1,
     ...     zero_price_fn=make_zero_price_fun(
-    ...         flat_curve=8e-2)).item()  # doctest: +NORMALIZE_WHITESPACE
-    6.965803939497351
-    >>> zero_curve_bond_duration(
+    ...         flat_curve=8e-2)).item(), 8)  # doctest: +NORMALIZE_WHITESPACE
+    6.96580394
+    >>> round(zero_curve_bond_duration(
     ...     cpn=5e-2, mat=2, freq=1,
     ...     zero_price_fn=make_zero_price_fun(
     ...         zero_at_coupon_dates=[3e-2, 10e-2])
-    ... ).item()  # doctest: +NORMALIZE_WHITESPACE
-    1.9470227670753064
+    ... ).item(), 8)  # doctest: +NORMALIZE_WHITESPACE
+    1.94702277
     """
     freq, cpn = array(freq), array(cpn)
     redeem = where(redeem is None, face, redeem)

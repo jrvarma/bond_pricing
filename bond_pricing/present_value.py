@@ -9,7 +9,7 @@ can be used directly if desired.
 
 """
 import numpy as np
-from numpy import array, log, exp, where, vectorize
+from numpy import array, log, log1p, exp, where, vectorize
 from bond_pricing.utils import newton_wrapper, dict_to_dataframe
 
 
@@ -30,10 +30,10 @@ def pvaf(r, n):
 
     Examples
     --------
-    >>> pvaf(r=0.1, n=10).item()
-    6.144567105704685
+    >>> round(pvaf(r=0.1, n=10).item(), 8)
+    6.14456711
 
-    >>> pvaf(10e-2, [5, 10])
+    >>> pvaf(10e-2, [5, 10]).round(8)
     array([3.79078677, 6.14456711])
 
     """
@@ -63,9 +63,9 @@ def fvaf(r, n):
 
     Examples
     --------
-    >>> fvaf(r=0.1, n=10).item()
-    15.937424601000023
-    >>> fvaf(r=[0, 0.1], n=10)
+    >>> round(fvaf(r=0.1, n=10).item(), 8)
+    15.9374246
+    >>> fvaf(r=[0, 0.1], n=10).round(8)
     array([10.       , 15.9374246])
 
     """
@@ -104,17 +104,18 @@ def npv(cf, rate, cf_freq=1, comp_freq=1, cf_t=None,
 
     Examples
     --------
-    >>> npv(cf=[-100, 150, -50, 75], rate=5e-2).item()
-    59.327132213429586
+    >>> round(npv(cf=[-100, 150, -50, 75], rate=5e-2).item(), 8)
+    59.32713221
 
     >>> npv(cf=[-100, 150, -50, 75], rate=5e-2, comp_freq=[1, 2])
     array([59.32713221, 59.15230661])
 
     >>> npv(cf=[-100, 150, -50, 75], rate=5e-2,
-    ...     immediate_start=[False, True])
+    ...     immediate_start=[False, True]).round(8)
     array([59.32713221, 62.29348882])
 
-    >>> npv(cf=[-100, 150, -50, 75], cf_t=[0, 2, 5, 7], rate=[5e-2, 8e-2])
+    >>> npv(cf=[-100, 150, -50, 75], cf_t=[0, 2, 5, 7],
+    ... rate=[5e-2, 8e-2]).round(8)
     array([50.17921321, 38.33344284])
 
     """
@@ -157,11 +158,11 @@ def equiv_rate(rate, from_freq=1, to_freq=1):
     Examples
     --------
     >>> equiv_rate(
-    ...    rate=10e-2, from_freq=1, to_freq=[1, 2, 12, 365, np.inf])
+    ...    rate=10e-2, from_freq=1, to_freq=[1, 2, 12, 365, np.inf]).round(8)
     array([0.1       , 0.0976177 , 0.09568969, 0.09532262, 0.09531018])
 
     >>> equiv_rate(
-    ...    rate=10e-2, from_freq=[1, 2, 12, 365, np.inf], to_freq=1)
+    ...    rate=10e-2, from_freq=[1, 2, 12, 365, np.inf], to_freq=1).round(8)
     array([0.1       , 0.1025    , 0.10471307, 0.10515578, 0.10517092])
 
     """
@@ -171,7 +172,7 @@ def equiv_rate(rate, from_freq=1, to_freq=1):
     # we run np.seterr and np.divide to catch 0/0 errors
     old_settings = np.seterr(invalid='ignore')
     cc_rate = where(from_freq == np.inf, rate,
-                    log(1 + np.divide(rate, from_freq)) * from_freq)
+                    log1p(np.divide(rate, from_freq)) * from_freq)
     res = where(from_freq == to_freq,
                 rate,
                 where(to_freq == np.inf,
@@ -211,11 +212,11 @@ def duration(cf, rate, cf_freq=1, comp_freq=1, cf_t=None,
 
     Examples
     --------
-    >>> duration(cf=[100, 50, 75, 25], rate=10e-2).item()
-    1.9980073065426769
+    >>> round(duration(cf=[100, 50, 75, 25], rate=10e-2).item(), 8)
+    1.99800731
 
     >>> duration(cf=[100, 50, 75, 25], rate=10e-2,
-    ...          immediate_start=[True, False])
+    ...          immediate_start=[True, False]).round(8)
     array([0.99800731, 1.99800731])
 
     """
@@ -268,21 +269,21 @@ def irr(cf, cf_freq=1, comp_freq=1, cf_t=None, r_guess=10e-2):
 
     Examples
     --------
-    >>> irr(cf=[-100, 150, -50, 75]).item()
-    0.4999999999999994
+    >>> round(irr(cf=[-100, 150, -50, 75]).item(), 8)
+    0.5
 
-    >>> irr(cf=[-100, 150, -50, 75], cf_freq=1, comp_freq=2).item()
-    0.4494897427831782
+    >>> round(irr(cf=[-100, 150, -50, 75], cf_freq=1, comp_freq=2).item(), 8)
+    0.44948974
 
-    >>> irr(cf=[-100, 150, -50, 75], cf_t=[0, 2, 5, 7]).item()
-    0.2247448713915599
+    >>> round(irr(cf=[-100, 150, -50, 75], cf_t=[0, 2, 5, 7]).item(), 8)
+    0.22474487
 
-    >>> irr(cf=(-100, 230, -132), r_guess=[0.13, 0.18])
+    >>> irr(cf=(-100, 230, -132), r_guess=[0.13, 0.18]).round(8)
     array([0.1, 0.2])
 
     """
     if np.sign(max(cf)) == np.sign(min(cf)):
-        return(np.nan)
+        return np.nan
 
     def one_irr(cf_freq, comp_freq, r_guess):
 
@@ -324,9 +325,9 @@ def annuity_pv(rate, n_periods=np.inf, instalment=1, terminal_payment=0,
 
     Examples
     --------
-    >>> annuity_pv(rate=10e-2, n_periods=15, instalment=500).item()
-    3803.039753154183
-    >>> annuity_pv(rate=10e-2, n_periods=[10, 15], instalment=500)
+    >>> round(annuity_pv(rate=10e-2, n_periods=15, instalment=500).item(), 8)
+    3803.03975315
+    >>> annuity_pv(rate=10e-2, n_periods=[10, 15], instalment=500).round(8)
     array([3072.28355285, 3803.03975315])
 
     """
@@ -370,9 +371,9 @@ def annuity_fv(rate, n_periods=np.inf, instalment=1, terminal_payment=0,
 
     Examples
     --------
-    >>> annuity_fv(rate=10e-2, n_periods=15, instalment=500).item()
-    15886.240847078281
-    >>> annuity_fv(rate=10e-2, n_periods=[10, 15], instalment=500)
+    >>> round(annuity_fv(rate=10e-2, n_periods=15, instalment=500).item(), 8)
+    15886.24084708
+    >>> annuity_fv(rate=10e-2, n_periods=[10, 15], instalment=500).round(8)
     array([ 7968.7123005 , 15886.24084708])
 
     """
@@ -419,11 +420,16 @@ def annuity_instalment(rate, n_periods=np.inf, pv=None, fv=None,
 
     Examples
     --------
-    >>> annuity_instalment(rate=10e-2, n_periods=15, pv=3803.04).item()
-    500.0000324537518
+    >>> round(
+    ... annuity_instalment(rate=10e-2, n_periods=15, pv=3803.04).item(), 8)
+    500.00003245
 
-    >>> annuity_instalment(rate=10e-2, n_periods=[10, 15], pv=3803.04)
+    >>> annuity_instalment(rate=10e-2, n_periods=[10, 15], pv=3803.04).round(8)
     array([618.92724655, 500.00003245])
+
+    >>> annuity_instalment(rate=0.1, n_periods=2, pv=210,
+    ... immediate_start=[True, False]).round(8)
+    array([110., 121.])
 
     """
     if fv is None:
@@ -474,14 +480,15 @@ def annuity_periods(rate, instalment=1, pv=None, fv=None,
 
     Examples
     --------
-    >>> annuity_periods(rate=10e-2, instalment=500, pv=3803.04).item()
-    15.000002163748604
+    >>> round(
+    ... annuity_periods(rate=10e-2, instalment=500, pv=3803.04).item(), 8)
+    15.00000216
 
     >>> annuity_periods(rate=10e-2, instalment=500, pv=3803.04,
     ...      round2int_digits=4).item()
     15.0
 
-    >>> annuity_periods(rate=[0, 10e-2], instalment=500, pv=3803.04)
+    >>> annuity_periods(rate=[0, 10e-2], instalment=500, pv=3803.04).round(8)
     array([ 7.60608   , 15.00000216])
 
 """
@@ -516,7 +523,7 @@ def annuity_periods(rate, instalment=1, pv=None, fv=None,
                     np.nan,
                     where(df == 0,
                           np.inf,
-                          -log(df) / log(1 + r))))
+                          -log(df) / log1p(r))))
     np.seterr(**old_settings)
     # if immediate_start
     # add back the one period that we removed
@@ -562,11 +569,15 @@ def annuity_rate(n_periods=np.inf, instalment=1, pv=None, fv=None,
 
     Examples
     --------
-    >>> annuity_rate(n_periods=15, instalment=500, pv=3803.04).item()
-    0.09999998862890495
+    >>> round(annuity_rate(n_periods=15, instalment=500, pv=3803.04).item(), 8)
+    0.09999999
 
-    >>> annuity_rate(n_periods=[9, 10, 15], instalment=100, pv=1000)
+    >>> annuity_rate(n_periods=[9, 10, 15], instalment=100, pv=1000).round(8)
     array([-0.0205697 ,  0.        ,  0.05556497])
+
+    >>> annuity_rate(instalment=100, pv=1000,
+    ... immediate_start=[False, True]).round(8)
+    array([0.1       , 0.11111111])
 
     """
     if fv is None:
@@ -578,7 +589,9 @@ def annuity_rate(n_periods=np.inf, instalment=1, pv=None, fv=None,
     def one_rate(n_periods, instalment, pv, terminal_payment,
                  immediate_start, cf_freq, comp_freq):
         if (n_periods == np.inf):
-            return (pv/instalment)
+            periodic_rate = instalment / (
+                pv - (instalment if immediate_start else 0))
+            return equiv_rate(periodic_rate * cf_freq, cf_freq, comp_freq)
 
         def f(r):
             return annuity_pv(
@@ -641,15 +654,15 @@ def annuity_instalment_breakup(
 
     Examples
     --------
-    >>> {k: v.item() for k,v in
+    >>> {k: round(v.item(), 8) for k,v in
     ...    annuity_instalment_breakup(rate=10e-2, n_periods=15, pv=3803.04,
     ...       period_no=6).items()}  # doctest: +NORMALIZE_WHITESPACE
     {'Period No': 6,
-     'Opening Principal': 3072.283752266599,
-     'Instalment': 500.0000324537518,
-     'Interest Part': 307.2283752266599,
-     'Principal Part': 192.7716572270919,
-     'Closing Principal': 2879.512095039507}
+    'Opening Principal': 3072.28375227,
+    'Instalment': 500.00003245,
+    'Interest Part': 307.22837523,
+    'Principal Part': 192.77165723,
+    'Closing Principal': 2879.51209504}
 
     >>> d = annuity_instalment_breakup(rate=10e-2, n_periods=15, pv=3803.04,
     ...       period_no=range(1, 4), return_dataframe=True

@@ -1,3 +1,9 @@
+# 1.0.1 released 2026-10-03
+- Fixed [bug # 11](https://github.com/jrvarma/bond_pricing/issues/11) in `annuity_rate` for the perpetuity case.
+- Replaced `log(1+ ...)` with `log1p(...)` for greater numerical stability
+- Introduced `astype(float)` in several places to prevent `dtype=object` in numerical arrays.
+- In all the `doctests`, rounded the answers to eight decimal places for greater readability and for robustness to rounding errors when making minor changes to the code.
+
 # 1.0.0 released 2026-09-27
 
 - Fixed [bug # 8](https://github.com/jrvarma/bond_pricing/issues/8) in annuity instalment for immediate start annuities.

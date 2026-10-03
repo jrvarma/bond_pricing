@@ -133,9 +133,9 @@ def bond_coupon_periods(settle=None, mat=1, freq=2, daycount=None,
     res = array(_bond_coupon_periods(settle=settle, mat=mat,
                                      freq=freq, daycount=daycount))
     if len(res.shape) > 1:
-        result = dict(n=res[0, :],
-                      discounting_fraction=res[1, :],
-                      accrual_fraction=res[2, :],
+        result = dict(n=res[0, :].astype(float),
+                      discounting_fraction=res[1, :].astype(float),
+                      accrual_fraction=res[2, :].astype(float),
                       next_coupon=res[3, :],
                       prev_coupon=res[4, :],)
     else:
@@ -193,33 +193,32 @@ def bond_price_breakup(settle=None, cpn=0, mat=1, yld=0, freq=2,
 
     Examples
     --------
-    >>> bond_price_breakup(
+    >>> pd.Series(bond_price_breakup(
     ... settle="2012-04-15", mat="2022-01-01", cpn=8e-2, yld=8.8843e-2,
-    ... freq=1)  # doctest: +NORMALIZE_WHITESPACE
-    {'DirtyPrice': np.float64(96.64322827099208),
-    'AccruedInterest': np.float64(2.311111111111111),
-    'CleanPrice': np.float64(94.33211715988098),
-    'NextCoupon': Timestamp('2013-01-01 00:00:00'),
-    'PreviousCoupon': Timestamp('2012-01-01 00:00:00')}
+    ... freq=1))  # doctest: +NORMALIZE_WHITESPACE
+    DirtyPrice                   96.643228
+    AccruedInterest               2.311111
+    CleanPrice                   94.332117
+    NextCoupon         2013-01-01 00:00:00
+    PreviousCoupon     2012-01-01 00:00:00
+    dtype: object
 
-    >>> bond_price_breakup(
+    >>> pd.Series(bond_price_breakup(
     ... mat=10.25, cpn=8e-2, yld=9e-2,
-    ... freq=2)  # doctest: +NORMALIZE_WHITESPACE
-    {'DirtyPrice': np.float64(95.37373582338677),
-    'AccruedInterest': np.float64(2.0),
-    'CleanPrice': np.float64(93.37373582338677),
-    'NextCoupon': None,
-    'PreviousCoupon': None}
+    ... freq=2))  # doctest: +NORMALIZE_WHITESPACE
+    DirtyPrice         95.373736
+    AccruedInterest     2.000000
+    CleanPrice         93.373736
+    NextCoupon               NaN
+    PreviousCoupon           NaN
+    dtype: float64
 
     >>> bond_price_breakup(
     ... settle="2012-04-15", mat="2022-01-01", cpn=8e-2, yld=8.8843e-2,
     ... freq=[1,2,4])  # doctest: +NORMALIZE_WHITESPACE
-    {'DirtyPrice': array([96.64322827099208, 96.61560601490777,
-     94.59488828646788], dtype=object),
-    'AccruedInterest': array([2.311111111111111, 2.311111111111111,
-    0.3111111111111111], dtype=object),
-    'CleanPrice': array([94.33211715988098, 94.30449490379667,
-    94.28377717535678], dtype=object),
+    {'DirtyPrice': array([96.64322827, 96.61560601, 94.59488829]),
+    'AccruedInterest': array([2.31111111, 2.31111111, 0.31111111]),
+    'CleanPrice': array([94.33211716, 94.3044949 , 94.28377718]),
     'NextCoupon': array([Timestamp('2013-01-01 00:00:00'),
                         Timestamp('2012-07-01 00:00:00'),
                         Timestamp('2012-07-01 00:00:00')],
@@ -231,7 +230,7 @@ def bond_price_breakup(settle=None, cpn=0, mat=1, yld=0, freq=2,
     >>> bond_price_breakup(
     ... settle="2012-04-15", mat="2022-01-01", cpn=8e-2, yld=8.8843e-2,
     ... freq=[1,2,4],
-    ... return_dataframe=True)
+    ... return_dataframe=True)  # doctest: +NORMALIZE_WHITESPACE
       DirtyPrice AccruedInterest CleanPrice NextCoupon PreviousCoupon
     0  96.643228        2.311111  94.332117 2013-01-01     2012-01-01
     1  96.615606        2.311111  94.304495 2012-07-01     2012-01-01
@@ -244,7 +243,7 @@ def bond_price_breakup(settle=None, cpn=0, mat=1, yld=0, freq=2,
     comp_freq = where(comp_freq is None, freq, comp_freq).astype(float64)
     # find the equivalent yield that matches the coupon frequency
     yld = equiv_rate(yld, comp_freq, freq)
-    redeem = where(redeem is None, face, redeem)
+    redeem = where(redeem is None, face, redeem).astype(float)
     red_by_face = redeem / face
     res = bond_coupon_periods(settle, mat, freq, daycount)
     # compounding factor from previous coupon date to settlement date
@@ -304,21 +303,19 @@ def bond_price(settle=None, cpn=0, mat=1,
 
     Examples
     --------
+    >>> round(bond_price(settle="2012-04-15", mat="2022-01-01", cpn=8e-2,
+    ... yld=8.8843e-2, freq=1).item(), 8)
+    94.33211716
+
+    >>> round(bond_price(mat=10.25, cpn=8e-2, yld=9e-2, freq=2).item(), 8)
+    93.37373582
+
     >>> bond_price(settle="2012-04-15", mat="2022-01-01", cpn=8e-2,
-    ... yld=8.8843e-2, freq=1).item()
-    94.33211715988098
-
-    >>> bond_price(mat=10.25, cpn=8e-2, yld=9e-2, freq=2).item()
-    93.37373582338677
-
-    >>> bond_price(settle="2012-04-15", mat="2022-01-01", cpn=8e-2,
-    ...            yld=8.8843e-2,freq=[1, 2, 4])
-    array([94.33211715988098, 94.30449490379667, 94.28377717535678],
-          dtype=object)
-
-    >>> bond_price(settle = "2021-01-01", mat = "2031-01-01",
-    ...            yld = 1e-2, freq = 2, cpn = 5e-2).item()
-    137.9748382933389
+    ...            yld=8.8843e-2,freq=[1, 2, 4]).astype(float).round(8)
+    array([94.33211716, 94.3044949 , 94.28377718])
+    >>> round(bond_price(settle = "2021-01-01", mat = "2031-01-01",
+    ...            yld = 1e-2, freq = 2, cpn = 5e-2).item(), 8)
+    137.97483829
     """
     return bond_price_breakup(
         settle=settle, cpn=cpn, mat=mat, yld=yld, freq=freq,
@@ -361,16 +358,16 @@ def bond_duration(settle=None, cpn=0, mat=1, yld=0, freq=2,
 
     Examples
     --------
-    >>> bond_duration(settle="2012-04-15", mat="2022-01-01", cpn=8e-2,
-    ...               yld=8.8843e-2).item()
-    6.678708669753968
+    >>> round(bond_duration(settle="2012-04-15", mat="2022-01-01", cpn=8e-2,
+    ...               yld=8.8843e-2).item(), 8)
+    6.67870867
+
+    >>> round(bond_duration(settle="2012-04-15", mat="2022-01-01", cpn=8e-2,
+    ...               yld=8.8843e-2, modified=True).item(), 8)
+    6.39464878
 
     >>> bond_duration(settle="2012-04-15", mat="2022-01-01", cpn=8e-2,
-    ...               yld=8.8843e-2, modified=True).item()
-    6.394648779016871
-
-    >>> bond_duration(settle="2012-04-15", mat="2022-01-01", cpn=8e-2,
-    ...               yld=[7e-2, 8.8843e-2])
+    ...               yld=[7e-2, 8.8843e-2]).round(8)
     array([6.88872548, 6.67870867])
 
     """
@@ -460,15 +457,15 @@ def bond_yield(settle=None, cpn=0, mat=1, price=100, freq=2, comp_freq=None,
     Examples
     --------
 
-    >>> bond_yield(settle="2012-04-15", mat="2022-01-01", cpn=8e-2,
-    ... price=94.33, freq=1).item()
-    0.08884647275135965
+    >>> round(bond_yield(settle="2012-04-15", mat="2022-01-01", cpn=8e-2,
+    ... price=94.33, freq=1).item(), 8)
+    0.08884647
 
-    >>> bond_yield(mat=10.25, cpn=8e-2, price=93.37, freq=2).item()
-    0.09000591604105035
+    >>> round(bond_yield(mat=10.25, cpn=8e-2, price=93.37, freq=2).item(), 8)
+    0.09000592
 
     >>> bond_yield(settle="2012-04-15", mat="2022-01-01", cpn=8e-2,
-    ... price=[93, 94, 95], freq=1)
+    ... price=[93, 94, 95], freq=1).round(8)
     array([0.09104904, 0.08938905, 0.08775269])
 
     """

@@ -55,7 +55,7 @@ def key_rate_shift(krs, mat=None, T=None, freq=2,
     elif krs == "none":
         return np.zeros_like(mat)
     else:
-        raise(Exception("Invalid key rate shift"))
+        raise Exception("Invalid key rate shift")
 
 
 def make_KRS(freq=2, krs_points=standard_krs_points):
@@ -134,7 +134,8 @@ def key_rate_shifted_zero_curve(
     >>> fns = [key_rate_shifted_zero_curve(
     ...        initial_zero_fn=fn0, krs=krs, what='zero_fn')
     ...        for krs in standard_krs_points]
-    >>> zero_curve_bond_price(cpn=8e-2, mat=10, zero_price_fn=fns) - P0
+    >>> (zero_curve_bond_price(
+    ...  cpn=8e-2, mat=10, zero_price_fn=fns) - P0).round(8)
     array([-0.00121608, -0.00467591, -0.08307928,  0.        ])
 
     """
@@ -161,5 +162,5 @@ def key_rate_shifted_zero_curve(
         zyld = par_yld_to_zero(shifted_par, freq=freq)['zero_yields']
         return make_zero_price_fun(zero_at_coupon_dates=zyld, freq=freq)
     else:
-        raise(Exception("'what' must be one of zero_yields zero_prices "
-                        "forward_rates zero_fn"))
+        raise Exception("'what' must be one of zero_yields zero_prices "
+                        "forward_rates zero_fn")

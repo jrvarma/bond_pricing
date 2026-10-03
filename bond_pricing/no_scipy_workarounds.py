@@ -38,7 +38,7 @@ def my_irr_0(f, lower=None, upper=None, guess=None, warn=True,
             guess = 0
     lower = lower or LOWER
     upper = upper or UPPER
-    if not(lower >= -1 and guess >= lower and guess <= upper):
+    if not (lower >= -1 and guess >= lower and guess <= upper):
         if warn:
             from warnings import warn
             warn("-1 <= lower <= guess <= upper is required")
@@ -65,12 +65,12 @@ def bracket_root(f, lower, upper, guess, nstep=100):
             # search for change of sign
             # moving in steps of size step_pct
             # stop if sign change found
-            if(guess + n*step <= UPPER and
+            if (guess + n*step <= UPPER and
                (sign(f(guess + n*step)) != guess_sign)):
                 R = guess + n*step
                 L = R - step
                 break
-            if(guess - n*step >= LOWER and
+            if (guess - n*step >= LOWER and
                (sign(f(guess - n*step)) != guess_sign)):
                 L = guess - n*step
                 R = L + step
